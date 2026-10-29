@@ -313,6 +313,7 @@ pub fn builder() -> tauri_specta::Builder<tauri::Wry> {
         window::window_new,
         window::window_open_settings,
         window::window_cycle,
+        window::window_merge_all,
         window::window_toggle_fullscreen,
         window::window_take_launch,
         window::window_close_context,

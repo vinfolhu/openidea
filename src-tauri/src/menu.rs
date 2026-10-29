@@ -798,12 +798,13 @@ pub fn spec(os: Os) -> Vec<Entry> {
         window.extend([
             accel("window.next", "Next Project Window", "Cmd+`"),
             accel("window.previous", "Previous Project Window", "Cmd+Shift+`"),
+            // macOS NSWindow tabbing: merges every project window into one tabbed frame.
+            SEP,
+            act("window.mergeAll", "Merge All Project Windows"),
+            Entry::Native(Native::BringAllToFront),
         ]);
     } else {
         window.extend([act("window.next", "Next Project Window"), act("window.previous", "Previous Project Window")]);
-    }
-    if mac {
-        window.extend([SEP, Entry::Native(Native::BringAllToFront)]);
     }
     menus.push(sub("window", "Window", window));
 
@@ -1312,6 +1313,14 @@ mod tests {
             ] {
                 assert!(ids.contains(&required), "{required} missing on {os:?}");
             }
+        }
+    }
+
+    #[test]
+    fn merge_all_project_windows_is_macos_only() {
+        assert!(action_ids(&spec(Os::Mac)).contains(&"window.mergeAll"));
+        for os in [Os::Windows, Os::Linux] {
+            assert!(!action_ids(&spec(os)).contains(&"window.mergeAll"), "{os:?}");
         }
     }
 

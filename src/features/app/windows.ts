@@ -282,6 +282,19 @@ export function windowActions(): Action[] {
       run: () => (isTauri() ? commands.windowCycle(false) : undefined),
     },
     {
+      // macOS only in the native Window menu; Find Action still lists it elsewhere.
+      id: "window.mergeAll",
+      title: t("app.action.mergeAllWindows"),
+      category: t("app.category.window"),
+      keywords: ["merge", "tabs", "windows", "project"],
+      run: async () => {
+        if (!isTauri()) return;
+        await call(commands.windowMergeAll()).catch((e) =>
+          notifications().notify({ level: "error", title: t("app.action.mergeAllWindows"), body: errorText(e) }),
+        );
+      },
+    },
+    {
       id: "window.toggleFullScreen",
       title: t("app.action.toggleFullScreen"),
       category: t("app.category.view"),

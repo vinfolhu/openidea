@@ -31,6 +31,10 @@ const SETTINGS_PREFIX: &str = "settings-";
 const CASCADE: f64 = 28.0;
 const SETTINGS_SIZE: (f64, f64) = (980.0, 720.0);
 const SETTINGS_MIN_SIZE: (f64, f64) = (640.0, 420.0);
+/// Shared macOS tabbing id so project windows can merge into one tabbed window
+/// (Window › Merge All Project Windows). Settings windows keep a separate id.
+#[cfg(target_os = "macos")]
+const PROJECT_TABBING_ID: &str = "ai.l0ng.openidea.project";
 
 /// What a freshly opened window should do once its frontend is up.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, Type)]
@@ -269,7 +273,12 @@ fn build_project_window(app: &AppHandle, mut config: WindowConfig) -> IdeResult<
         config.background_color = Some(frame_color(a, false));
     }
     let window = WebviewWindowBuilder::from_config(app, &config)
-        .and_then(|b| b.build())
+        .and_then(|b| {
+            // Same tabbing id on every project window: required for Merge All Project Windows.
+            #[cfg(target_os = "macos")]
+            let b = b.tabbing_identifier(PROJECT_TABBING_ID);
+            b.build()
+        })
         .map_err(|e| IdeError::internal(format!("cannot create window: {e}")))?;
     apply_zoom(app, &window);
     // "Sync with OS" needs the OS mode, known once the window exists.
@@ -662,6 +671,30 @@ pub fn cycle(app: &AppHandle, current: &str, forward: bool) {
     let sorted = project_window_labels(app);
     if let Some(w) = cycle_target(&sorted, current, forward).and_then(|l| windows.get(&l)) {
         focus(w);
+    }
+}
+
+/// Merges every project window that shares this window's macOS tabbing id into
+/// one tabbed frame (IDEA's Window › Merge All Project Windows).
+pub fn merge_all_project_windows(window: &WebviewWindow) -> IdeResult<()> {
+    #[cfg(target_os = "macos")]
+    {
+        use objc2::runtime::AnyObject;
+        use objc2_app_kit::NSWindow;
+
+        let ptr = window.ns_window().map_err(|e| IdeError::internal(e.to_string()))?;
+        if ptr.is_null() {
+            return Err(IdeError::internal("no NSWindow"));
+        }
+        // SAFETY: Tauri returns a live NSWindow* for an open macOS webview window.
+        let ns_window: &NSWindow = unsafe { &*ptr.cast::<NSWindow>() };
+        ns_window.mergeAllWindows(None::<&AnyObject>);
+        Ok(())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = window;
+        Err(IdeError::internal("Merge All Project Windows is only available on macOS"))
     }
 }
 

@@ -645,6 +645,8 @@ export const commands = {
 	windowOpenSettings: (page: string | null, newProjects: boolean, background: string | null) => typedError<null, IdeError>(__TAURI_INVOKE("window_open_settings", { page, newProjects, background })),
 	/**  Focuses the next / previous window (⌘` / ⇧⌘`). */
 	windowCycle: (forward: boolean) => __TAURI_INVOKE<void>("window_cycle", { forward }),
+	/**  macOS: merges all project windows into tabs of this window (Window › Merge All Project Windows). */
+	windowMergeAll: () => typedError<null, IdeError>(__TAURI_INVOKE("window_merge_all")),
 	windowToggleFullscreen: () => typedError<boolean, IdeError>(__TAURI_INVOKE("window_toggle_fullscreen")),
 	/**  What this window was opened for (taken once). */
 	windowTakeLaunch: () => __TAURI_INVOKE<{
